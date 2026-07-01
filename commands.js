@@ -1,20 +1,40 @@
 Office.onReady();
 
 // ======================================================
-// CONFIGURACIÓN — AJUSTA ESTOS VALORES A TUS CLIENTES REALES
+// CONFIGURACIÓN
+// Cada cliente tiene una keyword (visible, va en el nombre del
+// adjunto) y un hash SHA-256 de su dominio de correo (NO revela
+// el dominio real, solo se usa para comparar).
+//
+// Para obtener el hash de tu dominio real, usa el archivo
+// calculadora-hash-LOCAL-NO-SUBIR.html en tu computadora
+// (nunca subas ese archivo a GitHub).
 // ======================================================
 const REGLAS_CLIENTES = [
   {
-    // Palabra clave que debe aparecer en el nombre del archivo adjunto
-    keywordAdjunto: "ClienteA",
-    // Dominio (o correo específico) que debe estar en Para/CC
-    dominioCorreo: "clientea.com"
+    keyword: "Tenant 01",
+    dominioHash: "PEGA_AQUI_EL_HASH_DEL_DOMINIO_TENANT_01"
   },
   {
-    keywordAdjunto: "ClienteB",
-    dominioCorreo: "clienteb.com"
+    keyword: "Tenant 02",
+    dominioHash: "PEGA_AQUI_EL_HASH_DEL_DOMINIO_TENANT_02"
   }
 ];
+
+async function sha256(texto) {
+  const buffer = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(texto.trim().toLowerCase())
+  );
+  return Array.from(new Uint8Array(buffer))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function obtenerDominio(correo) {
+  const partes = (correo || "").toLowerCase().split("@");
+  return partes.length === 2 ? partes[1] : "";
+}
 // ======================================================
 
 function validarDestinatario(event) {
@@ -32,7 +52,7 @@ function validarDestinatario(event) {
     // Detecta qué reglas de cliente aplican según los adjuntos presentes
     const reglasDetectadas = REGLAS_CLIENTES.filter(regla =>
       attachments.some(att =>
-        att.name.toLowerCase().includes(regla.keywordAdjunto.toLowerCase())
+        att.name.toLowerCase().includes(regla.keyword.toLowerCase())
       )
     );
 
@@ -43,27 +63,33 @@ function validarDestinatario(event) {
     }
 
     item.to.getAsync(function (toResult) {
-      item.cc.getAsync(function (ccResult) {
+      item.cc.getAsync(async function (ccResult) {
         const destinatarios = []
           .concat(toResult.value || [])
           .concat(ccResult.value || [])
-          .map(r => (r.emailAddress || "").toLowerCase());
+          .map(r => obtenerDominio(r.emailAddress))
+          .filter(Boolean);
 
-        const destinatariosStr = destinatarios.join(";");
-
-        const reglaIncumplida = reglasDetectadas.find(
-          regla => !destinatariosStr.includes(regla.dominioCorreo.toLowerCase())
+        // Calcula el hash de cada dominio de destinatario presente
+        const hashesDestinatarios = await Promise.all(
+          destinatarios.map(sha256)
         );
+
+        let reglaIncumplida = null;
+        for (const regla of reglasDetectadas) {
+          if (!hashesDestinatarios.includes(regla.dominioHash)) {
+            reglaIncumplida = regla;
+            break;
+          }
+        }
 
         if (reglaIncumplida) {
           event.completed({
             allowEvent: false,
             errorMessage:
               "El archivo adjunto corresponde a '" +
-              reglaIncumplida.keywordAdjunto +
-              "' pero el destinatario no coincide con ese cliente (" +
-              reglaIncumplida.dominioCorreo +
-              "). Verifica antes de enviar."
+              reglaIncumplida.keyword +
+              "' pero el destinatario no coincide con ese cliente. Verifica antes de enviar."
           });
         } else {
           event.completed({ allowEvent: true });
