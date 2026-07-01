@@ -5,20 +5,19 @@
            xsi:type="MailApp">
 
   <!-- Genera un GUID único aquí: https://www.guidgenerator.com/ -->
-  <Id>00000000-0000-0000-0000-000000000000</Id>
+  <Id>a9d4e33e-aa2a-47a3-99a5-47cd71a72520</Id>
   <Version>1.0.0.0</Version>
   <ProviderName>Tu Empresa</ProviderName>
   <DefaultLocale>es-MX</DefaultLocale>
   <DisplayName DefaultValue="Validador de Destinatario"/>
   <Description DefaultValue="Valida que el destinatario coincida con el cliente del archivo adjunto antes de enviar el correo."/>
 
-  <!-- CAMBIA https://TU-DOMINIO por tu URL real de hospedaje en TODO el archivo -->
-  <IconUrl DefaultValue="https://TU-DOMINIO/assets/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://TU-DOMINIO/assets/icon-80.png"/>
-  <SupportUrl DefaultValue="https://TU-DOMINIO/"/>
+  <IconUrl DefaultValue="https://nmiramontesluer.github.io/outlook-validador/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://nmiramontesluer.github.io/outlook-validador/assets/icon-80.png"/>
+  <SupportUrl DefaultValue="https://nmiramontesluer.github.io/outlook-validador/"/>
 
   <AppDomains>
-    <AppDomain>https://TU-DOMINIO</AppDomain>
+    <AppDomain>https://nmiramontesluer.github.io/outlook-validador</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -34,7 +33,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://TU-DOMINIO/fallback.html"/>
+        <SourceLocation DefaultValue="https://nmiramontesluer.github.io/outlook-validador/fallback.html"/>
       </DesktopSettings>
     </Form>
   </FormSettings>
@@ -68,11 +67,11 @@
     </Hosts>
     <Resources>
       <bt:Urls>
-        <bt:Url id="Commands.Url" DefaultValue="https://TU-DOMINIO/commands.html"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://nmiramontesluer.github.io/outlook-validador/commands.html"/>
       </bt:Urls>
       <bt:Images>
-        <bt:Image id="icon-32" DefaultValue="https://TU-DOMINIO/assets/icon-32.png"/>
-        <bt:Image id="icon-80" DefaultValue="https://TU-DOMINIO/assets/icon-80.png"/>
+        <bt:Image id="icon-32" DefaultValue="https://nmiramontesluer.github.io/outlook-validador/assets/icon-32.png"/>
+        <bt:Image id="icon-80" DefaultValue="https://nmiramontesluer.github.io/outlook-validador/assets/icon-80.png"/>
       </bt:Images>
     </Resources>
   </VersionOverrides>
