@@ -13,11 +13,11 @@ Office.onReady();
 const REGLAS_CLIENTES = [
   {
     keyword: "Tenant 01",
-    dominioHash: "PEGA_AQUI_EL_HASH_DEL_DOMINIO_TENANT_01"
+    dominioHash: "7222211a44b4bc52ade53a7177340b19a580a3acc1ae5f36aa03a07943364dd8"
   },
   {
     keyword: "Tenant 02",
-    dominioHash: "PEGA_AQUI_EL_HASH_DEL_DOMINIO_TENANT_02"
+    dominioHash: "87dfc5e8ef63d1cd142fb7fe1f9f8ef48816baaacb7002de0d506b6f646d80e4"
   }
 ];
 
