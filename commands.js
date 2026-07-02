@@ -2,13 +2,6 @@ Office.onReady();
 
 // ======================================================
 // CONFIGURACIÓN
-// Cada cliente tiene una keyword (visible, va en el nombre del
-// adjunto) y un hash SHA-256 de su dominio de correo (NO revela
-// el dominio real, solo se usa para comparar).
-//
-// Para obtener el hash de tu dominio real, usa el archivo
-// calculadora-hash-LOCAL-NO-SUBIR.html en tu computadora
-// (nunca subas ese archivo a GitHub).
 // ======================================================
 const REGLAS_CLIENTES = [
   {
@@ -35,64 +28,86 @@ function obtenerDominio(correo) {
   const partes = (correo || "").toLowerCase().split("@");
   return partes.length === 2 ? partes[1] : "";
 }
-// ======================================================
 
+// ======================================================
 function validarDestinatario(event) {
+  console.log("[Validador] validarDestinatario() SE EJECUTÓ");
   const item = Office.context.mailbox.item;
 
   item.getAttachmentsAsync(function (attResult) {
+    console.log("[Validador] getAttachmentsAsync status:", attResult.status);
+
     if (attResult.status !== Office.AsyncResultStatus.Succeeded) {
-      // Si no se pueden leer adjuntos, no bloqueamos el envío
+      console.warn("[Validador] No se pudieron leer adjuntos, se permite el envío por defecto.");
       event.completed({ allowEvent: true });
       return;
     }
 
     const attachments = attResult.value || [];
+    console.log("[Validador] Adjuntos detectados:", attachments.map(a => a.name));
 
-    // Detecta qué reglas de cliente aplican según los adjuntos presentes
     const reglasDetectadas = REGLAS_CLIENTES.filter(regla =>
       attachments.some(att =>
         att.name.toLowerCase().includes(regla.keyword.toLowerCase())
       )
     );
+    console.log("[Validador] Reglas detectadas por keyword:", reglasDetectadas.map(r => r.keyword));
 
     if (reglasDetectadas.length === 0) {
-      // Ningún adjunto coincide con las palabras clave configuradas
+      console.log("[Validador] Ningún adjunto coincide con las keywords configuradas -> se permite el envío.");
       event.completed({ allowEvent: true });
       return;
     }
 
     item.to.getAsync(function (toResult) {
+      console.log("[Validador] item.to.getAsync status:", toResult.status, toResult.value);
+
       item.cc.getAsync(async function (ccResult) {
-        const destinatarios = []
-          .concat(toResult.value || [])
-          .concat(ccResult.value || [])
-          .map(r => obtenerDominio(r.emailAddress))
-          .filter(Boolean);
+        console.log("[Validador] item.cc.getAsync status:", ccResult.status, ccResult.value);
 
-        // Calcula el hash de cada dominio de destinatario presente
-        const hashesDestinatarios = await Promise.all(
-          destinatarios.map(sha256)
-        );
+        try {
+          const destinatarios = []
+            .concat(toResult.value || [])
+            .concat(ccResult.value || [])
+            .map(r => obtenerDominio(r.emailAddress))
+            .filter(Boolean);
+          console.log("[Validador] Dominios de destinatarios:", destinatarios);
 
-        let reglaIncumplida = null;
-        for (const regla of reglasDetectadas) {
-          if (!hashesDestinatarios.includes(regla.dominioHash)) {
-            reglaIncumplida = regla;
-            break;
+          const hashesDestinatarios = await Promise.all(destinatarios.map(sha256));
+          console.log("[Validador] Hashes calculados de destinatarios:", hashesDestinatarios);
+
+          let reglaIncumplida = null;
+          for (const regla of reglasDetectadas) {
+            console.log(
+              "[Validador] Comparando regla:", regla.keyword,
+              "| hash esperado:", regla.dominioHash,
+              "| ¿coincide con algún destinatario?",
+              hashesDestinatarios.includes(regla.dominioHash)
+            );
+            if (!hashesDestinatarios.includes(regla.dominioHash)) {
+              reglaIncumplida = regla;
+              break;
+            }
           }
-        }
 
-        if (reglaIncumplida) {
-          event.completed({
-            allowEvent: false,
-            errorMessage:
-              "El archivo adjunto corresponde a '" +
-              reglaIncumplida.keyword +
-              "' pero el destinatario no coincide con ese cliente. Verifica antes de enviar."
-          });
-        } else {
-          event.completed({ allowEvent: true });
+          if (reglaIncumplida) {
+            console.log("[Validador] BLOQUEANDO envío por regla incumplida:", reglaIncumplida.keyword);
+            event.completed({
+              allowEvent: false,
+              errorMessage:
+                "El archivo adjunto corresponde a '" +
+                reglaIncumplida.keyword +
+                "' pero el destinatario no coincide con ese cliente. Verifica antes de enviar."
+            });
+          } else {
+            console.log("[Validador] Todas las reglas se cumplen -> se permite el envío.");
+            event.completed({ allowEvent: true });
+          }
+        } catch (err) {
+          console.error("[Validador] ERROR inesperado durante la validación:", err);
+          // Si algo truena aquí y no llamamos event.completed, Outlook
+          // eventualmente deja pasar el envío sin avisar.
+          event.completed({ allowEvent: true, errorMessage: "Error interno del validador: " + err.message });
         }
       });
     });
