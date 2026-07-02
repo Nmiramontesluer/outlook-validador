@@ -30,6 +30,15 @@
     </Sets>
   </Requirements>
 
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://nmiramontesluer.github.io/outlook-validador/fallback.html"/>
+        <RequestedHeight>250</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+
   <Permissions>ReadWriteItem</Permissions>
 
   <Rule xsi:type="RuleCollection" Mode="Or">
